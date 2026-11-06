@@ -17,8 +17,8 @@ android {
         applicationId = "org.opliterature.lnr"
         minSdk = 24
         targetSdk = 37
-        versionCode = 10
-        versionName = "1.2.4"
+        versionCode = 11
+        versionName = "1.2.5"
     }
     buildFeatures {
         compose = true
@@ -79,7 +79,7 @@ dependencies {
     implementation(libs.ktor.client.cio)
     implementation(libs.ktor.client.logging)
 
-    // LNR Api (Api 3, 对应 LightNovelReader 1.2.x), 由宿主在运行时提供
+    // LNR Api (Api 4, 对应 LightNovelReader 1.3.x), 由宿主在运行时提供
     compileOnly(libs.lightnovelreader.api)
     implementation(libs.kotlin.result)
     ksp(libs.lightnovelreader.compiler)

@@ -10,8 +10,8 @@
 | 插件名称 | OP文学社 |
 | 插件 id | `org.opliterature.lnr` |
 | 数据源 id | `0x4F504C33` |
-| Api 版本 | 3（对应 LightNovelReader 1.2.x） |
-| 当前版本 | 1.2.4 (versionCode 10) |
+| Api 版本 | 4（对应 LightNovelReader 1.3.x） |
+| 当前版本 | 1.2.5 (versionCode 11) |
 | 作者 | [MCAbleBlank](https://github.com/MCAbleBlank) |
 
 ## 功能
