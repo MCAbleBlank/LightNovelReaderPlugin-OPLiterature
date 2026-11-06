@@ -8,7 +8,9 @@ composeBom = "2026.06.01"
 foundationLayout = "1.11.4"
 kotlinSerialization = "1.11.0"
 ktor = "3.5.1"
-lightnovelreader = "0.3"
+lightnovelreader = "0.4-SNAPSHOT"
+kotlinResult = "2.3.1"
+ksp = "2.3.7"
 
 [libraries]
 desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar" }
@@ -21,9 +23,12 @@ ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
 lightnovelreader-api = { module = "io.nightfish.lightnovelreader:api", version.ref = "lightnovelreader" }
+lightnovelreader-compiler = { module = "io.nightfish.lightnovelreader:compiler", version.ref = "lightnovelreader" }
+kotlin-result = { module = "com.michael-bull.kotlin-result:kotlin-result", version.ref = "kotlinResult" }
 
 [plugins]
 kotlin_serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 compose_compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+google_ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

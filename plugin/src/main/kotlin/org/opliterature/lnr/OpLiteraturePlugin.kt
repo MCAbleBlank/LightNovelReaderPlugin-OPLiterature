@@ -10,7 +10,7 @@ import io.nightfish.lightnovelreader.api.plugin.Plugin
  * 实际的数据获取由 [org.opliterature.lnr.source.OpLiteratureWebDataSource] 完成，
  * 宿主会扫描带 [io.nightfish.lightnovelreader.api.web.WebDataSource] 注解的类并自动注册。
  *
- * apiVersion 必须与宿主支持版本同组，LightNovelReader 1.2.x 为 Api 3。
+ * apiVersion 必须与宿主支持版本同组，LightNovelReader 1.3.x 为 Api 4。
  */
 @Suppress("unused")
 @Plugin(
@@ -20,7 +20,7 @@ import io.nightfish.lightnovelreader.api.plugin.Plugin
     author = "MCAbleBlank",
     description = "从 opliterature.com 获取作品目录与正文",
     updateUrl = "",
-    apiVersion = 3
+    apiVersion = 4
 )
 class OpLiteraturePlugin : LightNovelReaderPlugin {
 
@@ -32,7 +32,7 @@ class OpLiteraturePlugin : LightNovelReaderPlugin {
         Log.i(
             TAG,
             "OP文学社数据源插件已加载: versionCode=${BuildConfig.VERSION_CODE} " +
-                    "versionName=${BuildConfig.VERSION_NAME} apiVersion=3"
+                    "versionName=${BuildConfig.VERSION_NAME} apiVersion=4"
         )
     }
 }

@@ -5,17 +5,18 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.google.ksp)
 }
 
 android {
     namespace = "org.opliterature.lnr"
-    compileSdk = 36
+    compileSdk = 37
     buildToolsVersion = "36.0.0"
 
     defaultConfig {
         applicationId = "org.opliterature.lnr"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 10
         versionName = "1.2.4"
     }
@@ -37,12 +38,26 @@ android {
 
 androidComponents {
     onVariants { variant ->
+        variant.sources.manifests.addStaticManifestFile(
+            layout.buildDirectory.file("generated/ksp/${variant.name}/resources/auto_register_manifest.xml").get().toString()
+        )
+    }
+}
+
+androidComponents {
+    onVariants { variant ->
         variant.outputs.forEach {
             val outputImpl = it as com.android.build.api.variant.impl.VariantOutputImpl
             val originalFileName = outputImpl.outputFileName.get()
             val newFileName = originalFileName.replace(".apk", ".apk.lnrp")
             outputImpl.outputFileName = newFileName
         }
+    }
+}
+
+afterEvaluate {
+    listOf("Debug", "Release").forEach { variant ->
+        tasks.findByName("process${variant}MainManifest")?.dependsOn("ksp${variant}Kotlin")
     }
 }
 
@@ -66,4 +81,6 @@ dependencies {
 
     // LNR Api (Api 3, 对应 LightNovelReader 1.2.x), 由宿主在运行时提供
     compileOnly(libs.lightnovelreader.api)
+    implementation(libs.kotlin.result)
+    ksp(libs.lightnovelreader.compiler)
 }

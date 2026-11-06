@@ -73,7 +73,7 @@ class OpLiteratureSearchProvider(
 
             else -> {
                 matched.forEach { work ->
-                    emit(SearchResult.MultipleBook(work.toBookInformation(api.coverUri(work))))
+                    emit(SearchResult.MultipleBook(work.id))
                 }
                 emit(SearchResult.End())
             }

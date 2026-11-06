@@ -2,7 +2,6 @@ package org.opliterature.lnr.source
 
 import android.net.Uri
 import io.nightfish.lightnovelreader.api.book.BookInformation
-import io.nightfish.lightnovelreader.api.book.MutableBookInformation
 import io.nightfish.lightnovelreader.api.book.WordCount
 import org.opliterature.lnr.data.Work
 import java.time.LocalDateTime
@@ -13,11 +12,11 @@ private val DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-M
 /**
  * 把站点作品转换成宿主使用的 [BookInformation]
  */
-fun Work.toBookInformation(coverUri: Uri): BookInformation = MutableBookInformation(
+fun Work.toBookInformation(coverUri: Uri): BookInformation = BookInformation(
     id = id,
     title = title,
     subtitle = slogan.ifBlank { meta },
-    coverUrl = coverUri,
+    coverUri = coverUri,
     author = displayAuthor,
     description = desc,
     tags = tagList,

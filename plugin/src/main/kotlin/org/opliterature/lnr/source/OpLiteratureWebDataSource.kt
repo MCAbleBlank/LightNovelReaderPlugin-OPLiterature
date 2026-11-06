@@ -15,15 +15,19 @@ import io.nightfish.lightnovelreader.api.book.BookInformation
 import io.nightfish.lightnovelreader.api.book.BookVolumes
 import io.nightfish.lightnovelreader.api.book.ChapterContent
 import io.nightfish.lightnovelreader.api.book.ChapterInformation
-import io.nightfish.lightnovelreader.api.book.MutableChapterContent
 import io.nightfish.lightnovelreader.api.book.Volume
 import io.nightfish.lightnovelreader.api.content.builder.ContentBuilder
-import io.nightfish.lightnovelreader.api.content.builder.simpleText
+import io.nightfish.lightnovelreader.api.content.builder.paragraph
+import io.nightfish.lightnovelreader.api.error.WebRequestError
+import io.nightfish.lightnovelreader.api.identifier.Identifier
 import io.nightfish.lightnovelreader.api.util.Cache
 import io.nightfish.lightnovelreader.api.web.WebBookDataSource
 import io.nightfish.lightnovelreader.api.web.WebDataSource
 import io.nightfish.lightnovelreader.api.web.explore.ExplorePageProvider
 import io.nightfish.lightnovelreader.api.web.search.SearchProvider
+import com.github.michaelbull.result.Err
+import com.github.michaelbull.result.Ok
+import com.github.michaelbull.result.Result
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -104,7 +108,7 @@ class OpLiteratureWebDataSource : WebBookDataSource {
 
     private val api: OpLiteratureApi by lazy { OpLiteratureApi(client) }
 
-    override val id: Int = DATA_SOURCE_ID
+    override val id: Identifier = Identifier("org.opliterature.lnr", "op-literature")
 
     override val permits = 4
 
@@ -139,53 +143,67 @@ class OpLiteratureWebDataSource : WebBookDataSource {
         }
     }
 
-    override suspend fun getBookInformation(id: String): BookInformation {
+    override suspend fun getBookInformation(id: String): Result<BookInformation, WebRequestError> {
         val work = try {
             api.work(id)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             Log.e(TAG, "获取作品详情失败 id=$id", e)
-            null
-        } ?: return BookInformation.empty(id)
+            return Err(
+                WebRequestError(
+                    title = "获取作品详情失败",
+                    message = "无法从 OP文学社 获取作品 $id：${e.message}",
+                    throwable = e
+                )
+            )
+        } ?: return Err(WebRequestError("获取作品详情失败", "OP文学社 未找到作品 $id"))
 
-        return work.toBookInformation(api.coverUri(work))
+        return Ok(work.toBookInformation(api.coverUri(work)))
     }
 
-    override suspend fun getBookVolumes(id: String): BookVolumes {
+    override suspend fun getBookVolumes(id: String): Result<BookVolumes, WebRequestError> {
         val work = try {
             api.work(id)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             Log.e(TAG, "获取目录失败 id=$id", e)
-            null
-        } ?: return BookVolumes.empty(id)
+            return Err(
+                WebRequestError(
+                    title = "获取目录失败",
+                    message = "无法从 OP文学社 获取作品 $id 的目录：${e.message}",
+                    throwable = e
+                )
+            )
+        } ?: return Err(WebRequestError("获取目录失败", "OP文学社 未找到作品 $id"))
 
-        return BookVolumes(
-            bookId = id,
-            // 站点没有分卷, 全部章节放进同一卷
-            volumes = listOf(
-                Volume(
-                    volumeId = "$id#default",
-                    volumeTitle = "正文",
-                    chapters = work.sortedChapters.map {
-                        ChapterInformation(
-                            id = work.chapterId(it.index),
-                            title = it.fullTitle
-                        )
-                    }
+        return Ok(
+            BookVolumes(
+                bookId = id,
+                // 站点没有分卷, 全部章节放进同一卷
+                volumes = listOf(
+                    Volume(
+                        volumeId = "$id#default",
+                        volumeTitle = "正文",
+                        chapters = work.sortedChapters.map {
+                            ChapterInformation(
+                                id = work.chapterId(it.index),
+                                title = it.fullTitle
+                            )
+                        }
+                    )
                 )
             )
         )
     }
 
-    override suspend fun getChapterContent(chapterId: String, bookId: String): ChapterContent {
+    override suspend fun getChapterContent(
+        chapterId: String,
+        bookId: String
+    ): Result<ChapterContent, WebRequestError> {
         val index = chapterId.substringAfterLast('#').toIntOrNull()
-        if (index == null) {
-            Log.e(TAG, "无法解析章节 id: $chapterId")
-            return ChapterContent.empty(chapterId)
-        }
+            ?: return Err(WebRequestError("章节不存在", "无法解析章节 id: $chapterId"))
 
         val work = try {
             api.work(bookId)
@@ -193,14 +211,20 @@ class OpLiteratureWebDataSource : WebBookDataSource {
             throw e
         } catch (e: Exception) {
             Log.e(TAG, "获取作品失败 bookId=$bookId", e)
-            null
-        } ?: return ChapterContent.empty(chapterId)
+            return Err(
+                WebRequestError(
+                    title = "获取作品失败",
+                    message = "无法从 OP文学社 获取作品 $bookId：${e.message}",
+                    throwable = e
+                )
+            )
+        } ?: return Err(WebRequestError("获取作品失败", "OP文学社 未找到作品 $bookId"))
 
         val chapters = work.sortedChapters
         val position = chapters.indexOfFirst { it.index == index }
         if (position < 0) {
             Log.e(TAG, "作品 $bookId 中不存在第 $index 章")
-            return ChapterContent.empty(chapterId)
+            return Err(WebRequestError("章节不存在", "作品 $bookId 中不存在第 $index 章"))
         }
 
         val paragraphs = try {
@@ -210,19 +234,24 @@ class OpLiteratureWebDataSource : WebBookDataSource {
             throw e
         } catch (e: Exception) {
             Log.e(TAG, "获取正文失败 bookId=$bookId", e)
-            return ChapterContent.empty(chapterId)
+            return Err(
+                WebRequestError(
+                    title = "获取正文失败",
+                    message = "无法从 OP文学社 获取作品 $bookId 的正文：${e.message}",
+                    throwable = e
+                )
+            )
         }
 
         // 相邻两段之间插入空行, 并在每段开头加缩进:
-        // SimpleTextComponentData 支持多行文本(\n 分隔), 这样整章只有一个文本组件,
-        // 段与段之间必然换行, 翻页模式下也能按行正确分页。
+        // 整章只生成一个段落组件, 段与段之间必然换行。
         val text = paragraphs.asSequence()
             .map { it.trim() }
             .filter { it.isNotEmpty() }
             .joinToString(PARAGRAPH_SEPARATOR) { PARAGRAPH_INDENT + it }
 
         val content = ContentBuilder().apply {
-            if (text.isNotEmpty()) simpleText(text)
+            if (text.isNotEmpty()) paragraph { text(text) }
         }.build()
 
         // 诊断用: 确认插件侧生成的文本确实带空行与缩进
@@ -233,12 +262,14 @@ class OpLiteratureWebDataSource : WebBookDataSource {
                     "首行缩进=${text.startsWith(PARAGRAPH_INDENT)}"
         )
 
-        return MutableChapterContent(
-            id = chapterId,
-            title = chapters[position].fullTitle,
-            content = content,
-            lastChapter = chapters.getOrNull(position - 1)?.let { work.chapterId(it.index) } ?: "",
-            nextChapter = chapters.getOrNull(position + 1)?.let { work.chapterId(it.index) } ?: ""
+        return Ok(
+            ChapterContent(
+                id = chapterId,
+                title = chapters[position].fullTitle,
+                content = content,
+                prevChapter = chapters.getOrNull(position - 1)?.let { work.chapterId(it.index) },
+                nextChapter = chapters.getOrNull(position + 1)?.let { work.chapterId(it.index) }
+            )
         )
     }
 
